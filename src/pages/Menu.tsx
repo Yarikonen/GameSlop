@@ -17,7 +17,7 @@ export function Menu({ onOpenLevel, onResults }: MenuProps) {
     <main className="screen menu">
       <header className="menu__hero">
         <h1 className="menu__title">
-          EVENT <span>LOOP</span> ARENA
+          THE <span>LOOP</span> ARENA
         </h1>
         <p className="menu__subtitle">
           Интерактивный тренажёр модели выполнения JavaScript: Call Stack, Web APIs, Microtask Queue,

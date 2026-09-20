@@ -1,4 +1,4 @@
-# Event Loop Arena
+# The Loop Arena
 
 Браузерная учебная игра про модель выполнения JavaScript: **Call Stack, Web APIs,
 Microtask Queue, Task Queue и Event Loop**.

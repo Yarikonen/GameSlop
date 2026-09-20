@@ -22,7 +22,7 @@ export function Results({ onMenu, onRestart }: ResultsProps) {
 
   return (
     <main className="screen results">
-      <h1 className="results__title">EVENT LOOP ARENA</h1>
+      <h1 className="results__title">THE LOOP ARENA</h1>
 
       <section className="results__card">
         <dl className="results__list">
