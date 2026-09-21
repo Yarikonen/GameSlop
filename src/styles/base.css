@@ -1,0 +1,147 @@
+:root {
+  --bg: #070a0f;
+  --bg-panel: #0f151e;
+  --bg-elev: #161f2c;
+  --line: #22314a;
+  --line-soft: #1a2434;
+  --text: #dde7f4;
+  --muted: #8598b2;
+  --stack: #ff7b9c;
+  --runtime: #a78bfa;
+  --micro: #35e0d0;
+  --task: #ffb454;
+  --output: #7ee787;
+  --danger: #ff5f6d;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 10px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(53, 224, 208, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(167, 139, 250, 0.08), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+ul,
+ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--micro);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  border-color: rgba(53, 224, 208, 0.5);
+  background: linear-gradient(180deg, rgba(53, 224, 208, 0.22), rgba(53, 224, 208, 0.08));
+  color: #d8fffb;
+}
+
+.btn--accent {
+  border-color: rgba(255, 180, 84, 0.5);
+  background: linear-gradient(180deg, rgba(255, 180, 84, 0.22), rgba(255, 180, 84, 0.08));
+  color: #ffeccd;
+}
+
+.btn--danger {
+  border-color: rgba(255, 95, 109, 0.55);
+  background: linear-gradient(180deg, rgba(255, 95, 109, 0.22), rgba(255, 95, 109, 0.08));
+  color: #ffdfe2;
+}
+
+.btn--ghost {
+  background: transparent;
+}
+
+.btn--small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.btn--big {
+  padding: 14px 26px;
+  font-size: 15px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.badge--learning {
+  border-color: rgba(255, 180, 84, 0.6);
+  color: var(--task);
+}
+
+.is-good {
+  color: var(--output);
+}
