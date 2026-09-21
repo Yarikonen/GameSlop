@@ -10,7 +10,7 @@ import {
 import { MAX_LIVES, POINTS } from '../engine/scoring'
 
 // Ключ сохранён с прежнего названия игры, чтобы не терять прогресс игроков.
-const STORAGE_KEY = 'event-loop-arena:v1'
+export const STORAGE_KEY = 'event-loop-arena:v1'
 
 export interface LevelRecord {
   levelId: string

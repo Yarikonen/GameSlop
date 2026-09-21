@@ -12,9 +12,11 @@ production-инцидент. Прохождение занимает **30–40 �
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173
-npm run build   # production-сборка в dist/
-npm run preview # предпросмотр собранного бандла
+npm run dev        # http://localhost:5173
+npm run build      # production-сборка в dist/
+npm run preview    # предпросмотр собранного бандла
+npm test           # прогон тестов
+npm run test:watch # тесты в watch-режиме
 npm run lint
 ```
 
@@ -54,6 +56,28 @@ GitHub Pages, Vercel, Netlify или любом статическом хост�
 блокируется — включается **Learning Mode** с бесплатными подсказками и разбором.
 Прогресс хранится в `localStorage`.
 
+## Тесты
+
+Vitest + Testing Library, окружение jsdom (`npm test`). Тесты написаны от лица
+игрока: проверяется не внутреннее устройство компонентов, а то, что он видит и
+делает.
+
+| Файл                                  | Что покрывает                                                     |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| `engine/*.test.ts`                    | правила Event Loop, проверка ответов, очки и ранги, STEP/RUN, Timeline |
+| `state/gameStore.test.tsx`            | очки, жизни, Learning Mode, сохранение прогресса в localStorage    |
+| `levels/levels.test.ts`               | целостность всех десяти уровней: задания решаемы и согласованы со сценарием |
+| `components/*.test.tsx`               | прогноз Output, раскладка по очередям, вопросы, роль Event Loop, подсказки, визуализация машины |
+| `components/sandboxes/*.test.tsx`     | лаборатории: fetch-гонка, блокировка потока, голодание очереди, расследование инцидента |
+| `pages/*.test.tsx`                    | меню, экран уровня, итоги прохождения                              |
+| `scenarios/*.test.tsx`                | сквозные сценарии через `<App/>`, включая прохождение всей игры    |
+
+Лаборатории 6–8 и финальный босс живут на реальных таймерах, кадрах и CPU-циклах,
+поэтому в тестах время фейковое, а `performance.now()` подменён так, чтобы
+`while (performance.now() < end)` всё-таки заканчивался; Web Worker заменён
+заглушкой. Прохождение всей игры целиком — отдельный тест
+`scenarios/fullGame.test.tsx`.
+
 ## Архитектура
 
 ```
@@ -70,6 +94,8 @@ src/
 │   └── sandboxes/     # FetchRace, FreezeLab, StarvationLab, IncidentBoss
 ├── pages/             # Menu, Game, Results
 ├── state/gameStore.tsx
+├── scenarios/         # сквозные тесты: сессия новичка, полное прохождение
+├── test/              # setup и помощники для тестов
 └── styles/
 ```
 
