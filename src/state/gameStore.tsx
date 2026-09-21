@@ -24,11 +24,18 @@ export interface LevelRecord {
   learningMode: boolean
 }
 
+/** Рекорд бесконечного режима. Держится отдельно от очков курса. */
+export interface EndlessRecord {
+  bestWave: number
+  bestScore: number
+}
+
 export interface GameState {
   score: number
   lives: number
   currentLevelId: string | null
   records: Record<string, LevelRecord>
+  endless: EndlessRecord
 }
 
 export type CorrectKind = 'prediction' | 'action' | 'explanation' | 'loop'
@@ -41,6 +48,7 @@ export type GameEvent =
   | { type: 'violation'; levelId: string }
   | { type: 'hint'; levelId: string }
   | { type: 'complete'; levelId: string; bonus: number }
+  | { type: 'endless-result'; wave: number; score: number }
   | { type: 'reset' }
   | { type: 'hydrate'; state: GameState }
 
@@ -56,11 +64,14 @@ const emptyRecord = (levelId: string): LevelRecord => ({
   learningMode: false,
 })
 
+const emptyEndless: EndlessRecord = { bestWave: 0, bestScore: 0 }
+
 export const initialState: GameState = {
   score: 0,
   lives: MAX_LIVES,
   currentLevelId: null,
   records: {},
+  endless: emptyEndless,
 }
 
 function withRecord(
@@ -168,6 +179,17 @@ export function reducer(state: GameState, event: GameEvent): GameState {
       }
     }
 
+    // Бесконечный режим не подмешивается к очкам курса: иначе ранг
+    // зарабатывался бы гриндом, а не пониманием.
+    case 'endless-result':
+      return {
+        ...state,
+        endless: {
+          bestWave: Math.max(state.endless.bestWave, event.wave),
+          bestScore: Math.max(state.endless.bestScore, event.score),
+        },
+      }
+
     case 'complete': {
       const record = state.records[event.levelId] ?? emptyRecord(event.levelId)
       const noHintBonus = record.hintsUsed === 0 ? POINTS.noHintBonus : 0
@@ -198,11 +220,17 @@ function load(): GameState {
     if (!raw) return initialState
     const parsed = JSON.parse(raw) as Partial<GameState>
     if (typeof parsed.score !== 'number' || typeof parsed.records !== 'object') return initialState
+    const endless = parsed.endless
     return {
       score: parsed.score,
       lives: typeof parsed.lives === 'number' ? parsed.lives : MAX_LIVES,
       currentLevelId: parsed.currentLevelId ?? null,
       records: (parsed.records as Record<string, LevelRecord>) ?? {},
+      // Сохранения, сделанные до появления бесконечного режима, поля не содержат.
+      endless: {
+        bestWave: typeof endless?.bestWave === 'number' ? endless.bestWave : 0,
+        bestScore: typeof endless?.bestScore === 'number' ? endless.bestScore : 0,
+      },
     }
   } catch {
     return initialState

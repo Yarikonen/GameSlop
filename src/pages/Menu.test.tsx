@@ -8,8 +8,11 @@ function setup(progress?: Parameters<typeof seedProgress>[0]) {
   if (progress) seedProgress(progress)
   const onOpenLevel = vi.fn()
   const onResults = vi.fn()
-  const view = renderWithGame(<Menu onOpenLevel={onOpenLevel} onResults={onResults} />)
-  return { onOpenLevel, onResults, ...view }
+  const onEndless = vi.fn()
+  const view = renderWithGame(
+    <Menu onOpenLevel={onOpenLevel} onResults={onResults} onEndless={onEndless} />,
+  )
+  return { onOpenLevel, onResults, onEndless, ...view }
 }
 
 const stat = (label: string) =>
@@ -36,7 +39,7 @@ describe('главное меню', () => {
   it('показывает все уровни игры как непройденные', () => {
     const { container } = setup()
 
-    const cards = container.querySelectorAll<HTMLElement>('.level-card')
+    const cards = container.querySelectorAll<HTMLElement>('.level-card:not(.is-endless)')
     expect(cards).toHaveLength(levels.length)
 
     cards.forEach((card, index) => {
@@ -159,6 +162,45 @@ describe('главное меню', () => {
 
       expect(stat('SCORE')).toBe('900')
       expect(stat('ПРОЙДЕНО')).toBe(`1 / ${levels.length}`)
+    })
+  })
+
+  describe('карточка бесконечного режима', () => {
+    it('заперта, пока босс не повержен', async () => {
+      const { onEndless, user } = setup()
+
+      const card = screen.getByText('Бесконечный Event Loop').closest('button') as HTMLButtonElement
+      expect(card).toBeDisabled()
+      expect(card).toHaveTextContent('откроется после Final Boss')
+
+      await user.click(card)
+      expect(onEndless).not.toHaveBeenCalled()
+    })
+
+    it('после победы над боссом открывается', async () => {
+      const { onEndless, user } = setup({
+        score: 5000,
+        records: { boss: makeRecord('boss', { completed: true, score: 900 }) },
+      })
+
+      const card = screen.getByText('Бесконечный Event Loop').closest('button') as HTMLButtonElement
+      expect(card).toBeEnabled()
+      expect(card).toHaveTextContent('режим открыт')
+
+      await user.click(card)
+      expect(onEndless).toHaveBeenCalledOnce()
+    })
+
+    it('показывает рекорд, когда он есть', () => {
+      setup({
+        score: 5000,
+        records: { boss: makeRecord('boss', { completed: true, score: 900 }) },
+        endless: { bestWave: 14, bestScore: 5100 },
+      })
+
+      expect(screen.getByText('Бесконечный Event Loop').closest('button')).toHaveTextContent(
+        'рекорд: волна 14 · 5100 очков',
+      )
     })
   })
 

@@ -1,10 +1,13 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MAX_LIVES } from '../engine/scoring'
 import { levels } from '../levels'
 import {
   clickButton,
+  makeRecord,
   playLevel,
   renderApp,
+  seedProgress,
   storedProgress,
   storedRecord,
 } from '../test/helpers'
@@ -176,5 +179,88 @@ describe('сквозной сценарий: итоги и рестарт', () =
 
     expect(confirm).toHaveBeenCalledOnce()
     expect(menuStat('SCORE')).toBe('0')
+  })
+})
+
+/* ------------------------------------------------------------------ */
+
+describe('сквозной сценарий: бесконечный режим', () => {
+  const chips = (container: HTMLElement, kind: 'micro' | 'task') =>
+    Array.from(
+      container.querySelectorAll<HTMLButtonElement>(`.loop-queue--${kind} button.chip`),
+    )
+
+  const endlessCard = () =>
+    screen.getByText('Бесконечный Event Loop').closest('button') as HTMLButtonElement
+
+  function playLegal(container: HTMLElement) {
+    const [head] = chips(container, 'micro').length ? chips(container, 'micro') : chips(container, 'task')
+    fireEvent.click(head)
+  }
+
+  function clearWave(container: HTMLElement) {
+    for (let guard = 0; guard < 30; guard += 1) {
+      if (chips(container, 'micro').length + chips(container, 'task').length === 0) return
+      playLegal(container)
+    }
+  }
+
+  beforeEach(() => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.777)
+  })
+
+  it('до победы над боссом режим заперт', () => {
+    renderApp()
+
+    expect(endlessCard()).toBeDisabled()
+    expect(endlessCard()).toHaveTextContent('откроется после Final Boss')
+  })
+
+  it('после босса: сыграл, проиграл, рекорд виден в меню', () => {
+    seedProgress({
+      score: 5000,
+      records: { boss: makeRecord('boss', { completed: true, score: 900 }) },
+    })
+    const { container } = renderApp()
+
+    // 1. Из меню открывается разблокированный режим.
+    fireEvent.click(endlessCard())
+    expect(screen.getByRole('heading', { level: 1, name: 'Бесконечный Event Loop' })).toBeInTheDocument()
+
+    // 2. Первая волна разбирается по правилам и открывает вторую.
+    clearWave(container)
+    clickButton('ВОЛНА 2 →')
+
+    // 3. Три нарушения подряд заканчивают забег.
+    for (let life = 0; life < MAX_LIVES; life += 1) {
+      fireEvent.click(chips(container, 'task')[0])
+    }
+    expect(screen.getByText('Забег окончен')).toBeInTheDocument()
+    expect(screen.getByText(/Новый рекорд/)).toBeInTheDocument()
+
+    // 4. Рекорд сохранён и виден на карточке в меню.
+    clickButton('В меню')
+    expect(endlessCard()).toHaveTextContent('рекорд: волна 2')
+    expect(storedProgress()?.endless.bestWave).toBe(2)
+
+    // 5. Очки курса от забега не изменились.
+    expect(storedProgress()?.score).toBe(5000)
+  })
+
+  it('сброс прогресса стирает и рекорд режима', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    seedProgress({
+      score: 5000,
+      records: { boss: makeRecord('boss', { completed: true, score: 900 }) },
+      endless: { bestWave: 12, bestScore: 4000 },
+    })
+    renderApp()
+
+    expect(endlessCard()).toHaveTextContent('рекорд: волна 12')
+
+    clickButton('СБРОСИТЬ ПРОГРЕСС')
+
+    expect(storedProgress()?.endless).toEqual({ bestWave: 0, bestScore: 0 })
+    expect(endlessCard()).toBeDisabled()
   })
 })

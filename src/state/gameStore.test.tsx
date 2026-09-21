@@ -21,7 +21,13 @@ function apply(events: GameEvent[], from: GameState = initialState): GameState {
 
 describe('прогресс игрока (reducer)', () => {
   it('новая игра — ноль очков, полные жизни, пустая история', () => {
-    expect(initialState).toEqual({ score: 0, lives: MAX_LIVES, currentLevelId: null, records: {} })
+    expect(initialState).toEqual({
+      score: 0,
+      lives: MAX_LIVES,
+      currentLevelId: null,
+      records: {},
+      endless: { bestWave: 0, bestScore: 0 },
+    })
   })
 
   describe('вход в уровень', () => {
@@ -215,6 +221,47 @@ describe('прогресс игрока (reducer)', () => {
     })
   })
 
+  describe('рекорд бесконечного режима', () => {
+    it('новая игра — рекорда нет', () => {
+      expect(initialState.endless).toEqual({ bestWave: 0, bestScore: 0 })
+    })
+
+    it('первый забег записывается целиком', () => {
+      const state = apply([{ type: 'endless-result', wave: 7, score: 900 }])
+      expect(state.endless).toEqual({ bestWave: 7, bestScore: 900 })
+    })
+
+    it('слабый забег рекорд не портит', () => {
+      const state = apply([
+        { type: 'endless-result', wave: 12, score: 3000 },
+        { type: 'endless-result', wave: 3, score: 200 },
+      ])
+      expect(state.endless).toEqual({ bestWave: 12, bestScore: 3000 })
+    })
+
+    it('волна и счёт обновляются независимо', () => {
+      const state = apply([
+        { type: 'endless-result', wave: 12, score: 1000 },
+        { type: 'endless-result', wave: 4, score: 5000 },
+      ])
+      expect(state.endless).toEqual({ bestWave: 12, bestScore: 5000 })
+    })
+
+    it('очки курса от бесконечного режима не растут — ранг им не накрутить', () => {
+      const state = apply([
+        { type: 'correct', levelId: LEVEL, kind: 'prediction' },
+        { type: 'endless-result', wave: 50, score: 100_000 },
+      ])
+      expect(state.score).toBe(POINTS.prediction)
+      expect(state.records[LEVEL].score).toBe(POINTS.prediction)
+    })
+
+    it('сброс прогресса стирает и рекорд', () => {
+      const played = apply([{ type: 'endless-result', wave: 9, score: 2000 }])
+      expect(reducer(played, { type: 'reset' }).endless).toEqual({ bestWave: 0, bestScore: 0 })
+    })
+  })
+
   describe('служебные события', () => {
     it('сброс возвращает игру к начальному состоянию', () => {
       const played = apply([
@@ -231,6 +278,7 @@ describe('прогресс игрока (reducer)', () => {
         lives: 1,
         currentLevelId: 'level4',
         records: { level4: makeRecord('level4', { completed: true, score: 1234 }) },
+        endless: { bestWave: 12, bestScore: 3400 },
       }
 
       expect(reducer(initialState, { type: 'hydrate', state: saved })).toEqual(saved)
@@ -252,6 +300,7 @@ function Harness() {
       <span data-testid="score">{state.score}</span>
       <span data-testid="lives">{state.lives}</span>
       <span data-testid="hints">{recordFor(LEVEL).hintsUsed}</span>
+      <span data-testid="best-wave">{state.endless.bestWave}</span>
       <button type="button" onClick={() => dispatch({ type: 'hint', levelId: LEVEL })}>
         подсказка
       </button>
@@ -312,6 +361,52 @@ describe('сохранение прогресса между сессиями', 
 
     expect(screen.getByTestId('score')).toHaveTextContent('0')
     expect(screen.getByTestId('lives')).toHaveTextContent(String(MAX_LIVES))
+  })
+
+  it('сохранение, сделанное до появления бесконечного режима, открывается', () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ score: 700, lives: 2, currentLevelId: 'level2', records: {} }),
+    )
+
+    render(
+      <GameProvider>
+        <Harness />
+      </GameProvider>,
+    )
+
+    expect(screen.getByTestId('score')).toHaveTextContent('700')
+    expect(screen.getByTestId('best-wave')).toHaveTextContent('0')
+  })
+
+  it('рекорд бесконечного режима поднимается из сохранения', () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ score: 0, records: {}, endless: { bestWave: 14, bestScore: 5100 } }),
+    )
+
+    render(
+      <GameProvider>
+        <Harness />
+      </GameProvider>,
+    )
+
+    expect(screen.getByTestId('best-wave')).toHaveTextContent('14')
+  })
+
+  it('битое поле рекорда не ломает запуск', () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ score: 0, records: {}, endless: { bestWave: 'много' } }),
+    )
+
+    render(
+      <GameProvider>
+        <Harness />
+      </GameProvider>,
+    )
+
+    expect(screen.getByTestId('best-wave')).toHaveTextContent('0')
   })
 
   it('сохранение без жизней восстанавливает полный запас', () => {
