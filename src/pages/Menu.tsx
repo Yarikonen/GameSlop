@@ -5,10 +5,12 @@ import { useGame } from '../state/gameStore'
 interface MenuProps {
   onOpenLevel: (levelId: string) => void
   onResults: () => void
+  onEndless: () => void
 }
 
-export function Menu({ onOpenLevel, onResults }: MenuProps) {
+export function Menu({ onOpenLevel, onResults, onEndless }: MenuProps) {
   const { state, dispatch, recordFor } = useGame()
+  const bossDefeated = recordFor('boss').completed
   const rank = rankFor(state.score)
   const firstUnfinished = levels.find((level) => !recordFor(level.id).completed) ?? levels[0]
   const completedCount = levels.filter((level) => recordFor(level.id).completed).length
@@ -72,6 +74,24 @@ export function Menu({ onOpenLevel, onResults }: MenuProps) {
             </button>
           )
         })}
+
+        <button
+          type="button"
+          className={`level-card is-endless${bossDefeated ? '' : ' is-locked'}`}
+          onClick={onEndless}
+          disabled={!bossDefeated}
+        >
+          <span className="level-card__badge">Endless</span>
+          <span className="level-card__title">Бесконечный Event Loop</span>
+          <span className="level-card__topic">волны без конца, правила те же</span>
+          <span className="level-card__status">
+            {!bossDefeated
+              ? '🔒 откроется после Final Boss'
+              : state.endless.bestWave > 0
+                ? `рекорд: волна ${state.endless.bestWave} · ${state.endless.bestScore} очков`
+                : 'режим открыт'}
+          </span>
+        </button>
       </section>
 
       <section className="menu__howto">

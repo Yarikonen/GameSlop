@@ -474,3 +474,38 @@
 .level-card.is-boss .level-card__badge {
   color: var(--danger);
 }
+
+/* ---------------- Endless ---------------- */
+
+.endless__stats {
+  margin: 0 0 16px;
+}
+
+.endless__board {
+  gap: 16px;
+}
+
+.endless .loop-puzzle__stack-value {
+  font-size: 13px;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.endless .debrief {
+  margin-top: 16px;
+}
+
+.level-card.is-endless {
+  background: linear-gradient(160deg, rgba(53, 224, 208, 0.12), var(--bg-panel));
+}
+
+.level-card.is-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.level-card.is-locked:hover {
+  transform: none;
+  border-color: var(--line);
+}
